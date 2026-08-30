@@ -71,7 +71,7 @@
         <p class="label">¿Vienes?</p>
         <h2>Confirma tu asistencia</h2>
         <p>Por favor confirma lo antes posible para poder dar el total de invitados a La Terraza.</p>
-        <a class="button" href="mailto:?subject=Confirmación%20-%20Mauricio%20Martínez&body=Hola%2C%20confirmo%20mi%20asistencia%20a%20la%20celebración.">Confirmar asistencia <span aria-hidden="true">→</span></a>
+        <button class="button" id="open-rsvp" type="button">Confirmar asistencia <span aria-hidden="true">→</span></button>
       </section>
 
       <footer>
@@ -80,6 +80,53 @@
         <small>Por favor, no llevar regalos.</small>
       </footer>
     </main>
+
+    <dialog class="rsvp-dialog" id="rsvp-dialog" aria-labelledby="rsvp-title">
+      <div class="rsvp-panel">
+        <header class="rsvp-dialog-header">
+          <div>
+            <p class="label">Confirmación</p>
+            <h2 id="rsvp-title">Busca tu invitación</h2>
+          </div>
+          <button class="icon-button" id="close-rsvp" type="button" aria-label="Cerrar confirmación">×</button>
+        </header>
+
+        <div class="rsvp-dialog-body" aria-live="polite">
+          <section class="rsvp-step" id="rsvp-search-step">
+            <form id="rsvp-search-form" novalidate>
+              <label class="field-label" for="rsvp-search">Escribe tu nombre o apellido</label>
+              <div class="search-control">
+                <input id="rsvp-search" name="search" type="search" minlength="3" autocomplete="name" autocapitalize="words" enterkeyhint="search" placeholder="Ej. Arcos" />
+                <button class="small-button" type="submit">Buscar</button>
+              </div>
+              <p class="field-help">Escribe al menos 3 letras.</p>
+            </form>
+            <div class="status-message" id="rsvp-search-status" role="status"></div>
+            <div class="search-results" id="rsvp-search-results"></div>
+          </section>
+
+          <section class="rsvp-step" id="rsvp-people-step" hidden>
+            <button class="back-button" id="rsvp-back" type="button"><span aria-hidden="true">←</span> Buscar otra invitación</button>
+            <p class="invitation-match" id="rsvp-invitation-name"></p>
+            <h3>¿Quiénes nos acompañarán?</h3>
+            <p class="existing-response" id="rsvp-existing-response" hidden>Ya tenemos una respuesta para esta invitación. Puedes actualizarla si lo necesitas.</p>
+            <form id="rsvp-people-form">
+              <div class="people-list" id="rsvp-people-list"></div>
+              <p class="contact-note">Si necesitas hacer algún cambio en tu invitación, por favor contáctame directamente.</p>
+              <div class="status-message" id="rsvp-submit-status" role="status"></div>
+              <button class="submit-button" type="submit">Guardar confirmación <span aria-hidden="true">→</span></button>
+            </form>
+          </section>
+
+          <section class="rsvp-step rsvp-success" id="rsvp-success-step" hidden>
+            <span class="success-mark" aria-hidden="true">✓</span>
+            <h3>¡Gracias! Tu confirmación ha sido registrada.</h3>
+            <div id="rsvp-confirmed-names"></div>
+            <button class="secondary-button" id="rsvp-finish" type="button">Cerrar</button>
+          </section>
+        </div>
+      </div>
+    </dialog>
     <script src="script.js"></script>
   </body>
 </html>
