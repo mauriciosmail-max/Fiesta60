@@ -59,9 +59,9 @@ function setBusy(button, busy, busyText, normalText) {
 
 async function requestJson(url, options = {}) {
   const response = await fetch(url, { cache: "no-store", redirect: "follow", ...options });
-  if (!response.ok) throw new Error("No pudimos conectar con el servicio de confirmación.");
+  if (!response.ok) throw new Error("No pudimos conectar con el servicio de confirmación");
   const payload = await response.json();
-  if (!payload.ok) throw new Error(payload.error || "No pudimos completar la solicitud.");
+  if (!payload.ok) throw new Error(payload.error || "No pudimos completar la solicitud");
   return payload;
 }
 
@@ -73,7 +73,7 @@ function buildApiUrl(parameters) {
 
 function showConnectionError(element, error) {
   console.error(error);
-  element.textContent = "No pudimos conectar en este momento. Revisa tu conexión e intenta nuevamente.";
+  element.textContent = "No pudimos conectar en este momento. Revisa tu conexión e intenta nuevamente";
 }
 
 openButton.addEventListener("click", () => {
@@ -101,11 +101,11 @@ searchForm.addEventListener("submit", async (event) => {
   searchResults.replaceChildren();
 
   if (!apiIsConfigured()) {
-    searchStatus.textContent = "La confirmación estará disponible cuando se conecte el servicio RSVP.";
+    searchStatus.textContent = "La confirmación estará disponible cuando se conecte el servicio RSVP";
     return;
   }
   if (query.length < 3) {
-    searchStatus.textContent = "Escribe al menos 3 letras para buscar.";
+    searchStatus.textContent = "Escribe al menos 3 letras para buscar";
     searchInput.focus();
     return;
   }
@@ -114,7 +114,7 @@ searchForm.addEventListener("submit", async (event) => {
   try {
     const payload = await requestJson(buildApiUrl({ action: "search", q: query }));
     if (payload.results.length === 0) {
-      searchStatus.textContent = "No encontramos una invitación con ese nombre. Revisa la escritura o intenta con otro apellido.";
+      searchStatus.textContent = "No encontramos una invitación con ese nombre. Revisa la escritura o intenta con otro apellido";
       return;
     }
 
@@ -208,7 +208,7 @@ function renderSuccess(names) {
   if (names.length === 0) {
     const message = document.createElement("p");
     message.className = "none-attending";
-    message.textContent = "No se confirmó ningún asistente para esta invitación.";
+    message.textContent = "No se confirmó ningún asistente para esta invitación";
     container.append(message);
   } else {
     const heading = document.createElement("p");

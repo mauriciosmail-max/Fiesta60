@@ -72,6 +72,16 @@ body::before {
   text-transform: uppercase;
 }
 
+.host-name {
+  margin-bottom: 17px;
+  font-family: "Fraunces", Georgia, serif;
+  font-size: 1.55rem;
+  font-weight: 600;
+  letter-spacing: 0.025em;
+  line-height: 1.1;
+  text-transform: none;
+}
+
 h1, h2 { font-family: "Fraunces", Georgia, serif; font-weight: 500; }
 
 h1 { margin: 0; font-size: clamp(2.7rem, 14vw, 4.2rem); line-height: 0.92; letter-spacing: -0.045em; }
@@ -93,6 +103,7 @@ h1 em { color: var(--gold); font-style: italic; }
 .rsvp h2 { margin: 0; font-size: 2.2rem; line-height: 1; }
 .rsvp p:not(.label) { margin: 15px auto 22px; color: rgba(245, 239, 226, 0.72); font-size: 0.9rem; line-height: 1.5; }
 .button { display: flex; align-items: center; justify-content: space-between; width: 100%; min-height: 52px; padding: 0 18px; color: var(--ink); background: #e7c374; border: 0; font: inherit; font-size: 0.9rem; font-weight: 700; text-decoration: none; border-radius: 2px; cursor: pointer; transition: transform 160ms ease, background 160ms ease; }
+.rsvp .button span { font-size: 1.65rem; line-height: 1; }
 .button:active { transform: scale(0.98); }
 .button:focus-visible, .text-link:focus-visible, button:focus-visible, input:focus-visible { outline: 3px solid var(--gold); outline-offset: 3px; }
 
