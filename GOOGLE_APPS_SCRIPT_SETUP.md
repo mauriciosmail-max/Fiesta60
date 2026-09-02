@@ -4,9 +4,11 @@
 
 En la pestaña `Sheet1`, la fila 1 debe contener exactamente:
 
-| A | B | C | D | E |
-| --- | --- | --- | --- | --- |
-| `invite_id` | `invitation_name` | `person_name` | `attending` | `responded_at` |
+| A | B | C | D | E | F | G |
+| --- | --- | --- | --- | --- | --- | --- |
+| `invite_id` | `group_name` | `group_token` | `invitation_name` | `person_name` | `attending` | `responded_at` |
+
+Para este sitio, cada fila debe usar exactamente `FMM01` en la columna `group_token`. El token distingue este grupo de otros que puedan compartir el mismo Sheet; no es una contraseña y nunca se muestra en la interfaz.
 
 No publiques el Sheet ni cambies su configuración de acceso. El Web App será el único intermediario.
 
@@ -47,17 +49,23 @@ Esta función valida los encabezados y crea un secreto privado en las propiedade
    ```
 
 3. Sustituye únicamente el texto entre comillas por la URL `/exec` copiada en el paso anterior.
-4. Guarda, prueba y después publica el cambio en GitHub Pages.
+4. Confirma que la constante del grupo sea:
+
+   ```js
+   const RSVP_GROUP_TOKEN = "FMM01";
+   ```
+
+5. Guarda, prueba y después publica el cambio en GitHub Pages.
 
 ## 6. Probar antes de publicar
 
 1. Busca un apellido presente en `invitation_name` o `person_name`.
 2. Confirma que se muestre una sola tarjeta por `invite_id`.
 3. Selecciona la invitación y marca algunas personas.
-4. Envía la respuesta y revisa que las columnas D y E se actualicen para todas las personas de esa invitación.
+4. Envía la respuesta y revisa que las columnas F y G se actualicen para todas las personas de esa invitación.
 5. Busca la misma invitación otra vez. Las personas con `YES` deben aparecer marcadas y las personas con `NO` desmarcadas.
 6. Cambia la selección y verifica que la respuesta anterior se sobrescriba con una nueva fecha.
 
 ## Actualizar el backend después
 
-Cuando modifiques `Code.gs`, abre **Implementar → Administrar implementaciones**, edita la implementación, selecciona **Nueva versión** y vuelve a implementar. La URL `/exec` puede permanecer igual.
+Cuando modifiques `Code.gs`, abre **Implementar → Administrar implementaciones**, edita la implementación existente, selecciona **Nueva versión** y vuelve a implementar. No crees otro Web App. La URL `/exec` puede permanecer igual.

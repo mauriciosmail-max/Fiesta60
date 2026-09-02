@@ -1,5 +1,7 @@
 // Paste the deployed Google Apps Script Web App URL here. It must end in /exec.
 const RSVP_API_URL = "https://script.google.com/macros/s/AKfycbxCeLl7-h9KwBjvZk9Z5kjnRJ84ZrBOI6gASAUMMDsMSLgXxjNeeKnFAxHrxHpFU_jQ/exec";
+// Public routing token for this invitation group. It is sent to Apps Script but never displayed.
+const RSVP_GROUP_TOKEN = "FMM01";
 
 document.querySelectorAll('a[href^="http"]').forEach((link) => {
   link.addEventListener("click", () => {
@@ -112,7 +114,7 @@ searchForm.addEventListener("submit", async (event) => {
 
   setBusy(submitButton, true, "Buscando…", "Buscar");
   try {
-    const payload = await requestJson(buildApiUrl({ action: "search", q: query }));
+    const payload = await requestJson(buildApiUrl({ action: "search", q: query, groupToken: RSVP_GROUP_TOKEN }));
     if (payload.results.length === 0) {
       searchStatus.textContent = "No encontramos una invitación con ese nombre. Revisa la escritura o intenta con otro apellido";
       return;
@@ -144,7 +146,7 @@ async function loadInvitation(selectionKey) {
   searchStatus.textContent = "Abriendo tu invitación…";
   searchResults.replaceChildren();
   try {
-    const payload = await requestJson(buildApiUrl({ action: "invitation", key: selectionKey }));
+    const payload = await requestJson(buildApiUrl({ action: "invitation", key: selectionKey, groupToken: RSVP_GROUP_TOKEN }));
     rsvpState.selectionKey = selectionKey;
     rsvpState.invitationName = payload.invitationName;
     rsvpState.people = payload.people;
@@ -189,7 +191,12 @@ peopleForm.addEventListener("submit", async (event) => {
     const payload = await requestJson(RSVP_API_URL, {
       method: "POST",
       headers: { "Content-Type": "text/plain;charset=utf-8" },
-      body: JSON.stringify({ action: "submit", selectionKey: rsvpState.selectionKey, selectedPeople }),
+      body: JSON.stringify({
+        action: "submit",
+        groupToken: RSVP_GROUP_TOKEN,
+        selectionKey: rsvpState.selectionKey,
+        selectedPeople,
+      }),
     });
     renderSuccess(payload.confirmedNames);
     setStep(successStep);

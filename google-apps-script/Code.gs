@@ -1,6 +1,7 @@
 const SPREADSHEET_ID = '19Oa-uMdjDQ6_ILbuZieI3Ajlqx6LHVPz6i2jGFL6q3I';
 const SHEET_NAME = 'Sheet1';
-const EXPECTED_HEADERS = ['invite_id', 'invitation_name', 'person_name', 'attending', 'responded_at'];
+const ALLOWED_GROUP_TOKEN = 'FMM01';
+const EXPECTED_HEADERS = ['invite_id', 'group_name', 'group_token', 'invitation_name', 'person_name', 'attending', 'responded_at'];
 const MAX_SEARCH_RESULTS = 12;
 const MAX_PEOPLE_PER_INVITATION = 50;
 
@@ -11,6 +12,9 @@ const MAX_PEOPLE_PER_INVITATION = 50;
  */
 function setupRsvpBackend() {
   getSheet_();
+  if (readGuests_(ALLOWED_GROUP_TOKEN).length === 0) {
+    throw new Error('No se encontraron invitados para el group_token configurado.');
+  }
   const properties = PropertiesService.getScriptProperties();
   if (!properties.getProperty('RSVP_SECRET')) {
     properties.setProperty('RSVP_SECRET', Utilities.getUuid() + Utilities.getUuid());
@@ -21,11 +25,12 @@ function setupRsvpBackend() {
 function doGet(e) {
   try {
     const action = cleanString_(e && e.parameter && e.parameter.action);
+    const groupToken = validateGroupToken_(e && e.parameter && e.parameter.groupToken);
     if (action === 'search') {
-      return json_(searchInvitations_(e.parameter.q));
+      return json_(searchInvitations_(e.parameter.q, groupToken));
     }
     if (action === 'invitation') {
-      return json_(getInvitation_(e.parameter.key));
+      return json_(getInvitation_(e.parameter.key, groupToken));
     }
     return json_({ ok: false, error: 'Solicitud no válida.' });
   } catch (error) {
@@ -53,7 +58,7 @@ function doPost(e) {
   }
 }
 
-function searchInvitations_(rawQuery) {
+function searchInvitations_(rawQuery, groupToken) {
   const query = normalize_(rawQuery);
   if (query.length < 3) {
     throw new Error('Escribe al menos 3 letras para buscar.');
@@ -62,7 +67,7 @@ function searchInvitations_(rawQuery) {
     throw new Error('La búsqueda es demasiado larga.');
   }
 
-  const guests = readGuests_();
+  const guests = readGuests_(groupToken);
   const groups = groupGuests_(guests);
   const results = [];
 
@@ -75,7 +80,7 @@ function searchInvitations_(rawQuery) {
     if (invitationMatches || personMatches) {
       results.push({
         invitationName: group.invitationName,
-        selectionKey: selectionKey_(group.inviteId),
+        selectionKey: selectionKey_(group.groupToken, group.inviteId),
       });
     }
   });
@@ -87,9 +92,9 @@ function searchInvitations_(rawQuery) {
   return { ok: true, results: results.slice(0, MAX_SEARCH_RESULTS) };
 }
 
-function getInvitation_(rawSelectionKey) {
+function getInvitation_(rawSelectionKey, groupToken) {
   const selectionKey = validateOpaqueKey_(rawSelectionKey);
-  const group = findGroupBySelectionKey_(selectionKey, groupGuests_(readGuests_()));
+  const group = findGroupBySelectionKey_(selectionKey, groupGuests_(readGuests_(groupToken)));
   if (!group) {
     throw new Error('No encontramos esa invitación. Vuelve a buscarla.');
   }
@@ -103,7 +108,7 @@ function getInvitation_(rawSelectionKey) {
     people: group.people.map(function(person) {
       return {
         personName: person.personName,
-        personKey: personKey_(group.inviteId, person.personName, person.occurrence),
+        personKey: personKey_(group.groupToken, group.inviteId, person.personName, person.occurrence),
         attending: person.attending === 'YES',
       };
     }),
@@ -111,6 +116,7 @@ function getInvitation_(rawSelectionKey) {
 }
 
 function saveRsvp_(body) {
+  const groupToken = validateGroupToken_(body.groupToken);
   const selectionKey = validateOpaqueKey_(body.selectionKey);
   if (!Array.isArray(body.selectedPeople)) {
     throw new Error('La selección de invitados no es válida.');
@@ -130,7 +136,7 @@ function saveRsvp_(body) {
 
   try {
     const sheet = getSheet_();
-    const groups = groupGuests_(readGuestsFromSheet_(sheet));
+    const groups = groupGuests_(readGuestsFromSheet_(sheet, groupToken));
     const group = findGroupBySelectionKey_(selectionKey, groups);
     if (!group) {
       throw new Error('No encontramos esa invitación. Vuelve a buscarla.');
@@ -138,7 +144,7 @@ function saveRsvp_(body) {
 
     const validKeys = {};
     group.people.forEach(function(person) {
-      validKeys[personKey_(group.inviteId, person.personName, person.occurrence)] = person;
+      validKeys[personKey_(group.groupToken, group.inviteId, person.personName, person.occurrence)] = person;
     });
 
     Object.keys(selectedKeys).forEach(function(key) {
@@ -150,9 +156,9 @@ function saveRsvp_(body) {
     const respondedAt = new Date();
     const confirmedNames = [];
     group.people.forEach(function(person) {
-      const key = personKey_(group.inviteId, person.personName, person.occurrence);
+      const key = personKey_(group.groupToken, group.inviteId, person.personName, person.occurrence);
       const attending = selectedKeys[key] ? 'YES' : 'NO';
-      sheet.getRange(person.sheetRow, 4, 1, 2).setValues([[attending, respondedAt]]);
+      sheet.getRange(person.sheetRow, 6, 1, 2).setValues([[attending, respondedAt]]);
       if (attending === 'YES') confirmedNames.push(person.personName);
     });
     SpreadsheetApp.flush();
@@ -172,17 +178,17 @@ function getSheet_() {
     .map(function(value) { return cleanString_(value); });
   EXPECTED_HEADERS.forEach(function(expected, index) {
     if (headers[index] !== expected) {
-      throw new Error('Revisa los encabezados de las columnas A:E en Sheet1.');
+      throw new Error('Revisa los encabezados de las columnas A:G en Sheet1.');
     }
   });
   return sheet;
 }
 
-function readGuests_() {
-  return readGuestsFromSheet_(getSheet_());
+function readGuests_(groupToken) {
+  return readGuestsFromSheet_(getSheet_(), groupToken);
 }
 
-function readGuestsFromSheet_(sheet) {
+function readGuestsFromSheet_(sheet, groupToken) {
   const lastRow = sheet.getLastRow();
   if (lastRow < 2) return [];
 
@@ -192,20 +198,24 @@ function readGuestsFromSheet_(sheet) {
 
   values.forEach(function(row, index) {
     const inviteId = cleanString_(row[0]);
-    const invitationName = cleanString_(row[1]);
-    const personName = cleanString_(row[2]);
-    if (!inviteId && !invitationName && !personName) return;
-    if (!inviteId || !invitationName || !personName) return;
+    const groupName = cleanString_(row[1]);
+    const rowGroupToken = cleanString_(row[2]);
+    const invitationName = cleanString_(row[3]);
+    const personName = cleanString_(row[4]);
+    if (!inviteId && !groupName && !rowGroupToken && !invitationName && !personName) return;
+    if (rowGroupToken !== groupToken) return;
+    if (!inviteId || !groupName || !invitationName || !personName) return;
 
-    const occurrenceKey = JSON.stringify([inviteId, personName]);
+    const occurrenceKey = JSON.stringify([rowGroupToken, inviteId, personName]);
     occurrences[occurrenceKey] = (occurrences[occurrenceKey] || 0) + 1;
     guests.push({
       sheetRow: index + 2,
       inviteId: inviteId,
+      groupToken: rowGroupToken,
       invitationName: invitationName,
       personName: personName,
-      attending: cleanString_(row[3]).toUpperCase(),
-      respondedAt: cleanString_(row[4]),
+      attending: cleanString_(row[5]).toUpperCase(),
+      respondedAt: cleanString_(row[6]),
       occurrence: occurrences[occurrenceKey],
     });
   });
@@ -216,32 +226,34 @@ function groupGuests_(guests) {
   const byInvite = {};
   const groups = [];
   guests.forEach(function(guest) {
-    if (!byInvite[guest.inviteId]) {
-      byInvite[guest.inviteId] = {
+    const groupKey = JSON.stringify([guest.groupToken, guest.inviteId]);
+    if (!byInvite[groupKey]) {
+      byInvite[groupKey] = {
         inviteId: guest.inviteId,
+        groupToken: guest.groupToken,
         invitationName: guest.invitationName,
         people: [],
       };
-      groups.push(byInvite[guest.inviteId]);
+      groups.push(byInvite[groupKey]);
     }
-    byInvite[guest.inviteId].people.push(guest);
+    byInvite[groupKey].people.push(guest);
   });
   return groups;
 }
 
 function findGroupBySelectionKey_(selectionKey, groups) {
   for (let index = 0; index < groups.length; index += 1) {
-    if (selectionKey_(groups[index].inviteId) === selectionKey) return groups[index];
+    if (selectionKey_(groups[index].groupToken, groups[index].inviteId) === selectionKey) return groups[index];
   }
   return null;
 }
 
-function selectionKey_(inviteId) {
-  return sign_(['invitation', inviteId]);
+function selectionKey_(groupToken, inviteId) {
+  return sign_(['invitation', groupToken, inviteId]);
 }
 
-function personKey_(inviteId, personName, occurrence) {
-  return sign_(['person', inviteId, personName, occurrence]);
+function personKey_(groupToken, inviteId, personName, occurrence) {
+  return sign_(['person', groupToken, inviteId, personName, occurrence]);
 }
 
 function sign_(parts) {
@@ -257,6 +269,14 @@ function validateOpaqueKey_(value) {
     throw new Error('La invitación seleccionada no es válida.');
   }
   return key;
+}
+
+function validateGroupToken_(value) {
+  const groupToken = cleanString_(value);
+  if (groupToken !== ALLOWED_GROUP_TOKEN) {
+    throw new Error('El grupo de invitación no es válido.');
+  }
+  return groupToken;
 }
 
 function normalize_(value) {
@@ -282,6 +302,7 @@ function safeError_(error) {
     'La selección contiene demasiadas personas.',
     'Una de las personas seleccionadas no pertenece a esta invitación.',
     'La invitación seleccionada no es válida.',
+    'El grupo de invitación no es válido.',
   ];
   if (allowed.indexOf(message) !== -1) return message;
   return 'No pudimos completar la solicitud. Intenta nuevamente.';
