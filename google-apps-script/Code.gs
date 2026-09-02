@@ -1,6 +1,6 @@
 const SPREADSHEET_ID = '19Oa-uMdjDQ6_ILbuZieI3Ajlqx6LHVPz6i2jGFL6q3I';
 const SHEET_NAME = 'Sheet1';
-const ALLOWED_GROUP_TOKEN = 'FMM01';
+const ALLOWED_GROUP_TOKENS = ['FMM01', 'FMA02', 'AMK01', 'BCN01', 'DFW01'];
 const EXPECTED_HEADERS = ['invite_id', 'group_name', 'group_token', 'invitation_name', 'person_name', 'attending', 'responded_at'];
 const MAX_SEARCH_RESULTS = 12;
 const MAX_PEOPLE_PER_INVITATION = 50;
@@ -12,9 +12,11 @@ const MAX_PEOPLE_PER_INVITATION = 50;
  */
 function setupRsvpBackend() {
   getSheet_();
-  if (readGuests_(ALLOWED_GROUP_TOKEN).length === 0) {
-    throw new Error('No se encontraron invitados para el group_token configurado.');
-  }
+  ALLOWED_GROUP_TOKENS.forEach(function(groupToken) {
+    if (readGuests_(groupToken).length === 0) {
+      throw new Error('No se encontraron invitados para el group_token ' + groupToken + '.');
+    }
+  });
   const properties = PropertiesService.getScriptProperties();
   if (!properties.getProperty('RSVP_SECRET')) {
     properties.setProperty('RSVP_SECRET', Utilities.getUuid() + Utilities.getUuid());
@@ -273,7 +275,7 @@ function validateOpaqueKey_(value) {
 
 function validateGroupToken_(value) {
   const groupToken = cleanString_(value);
-  if (groupToken !== ALLOWED_GROUP_TOKEN) {
+  if (ALLOWED_GROUP_TOKENS.indexOf(groupToken) === -1) {
     throw new Error('El grupo de invitación no es válido.');
   }
   return groupToken;

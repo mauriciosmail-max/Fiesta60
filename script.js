@@ -1,7 +1,7 @@
 // Paste the deployed Google Apps Script Web App URL here. It must end in /exec.
 const RSVP_API_URL = "https://script.google.com/macros/s/AKfycbxCeLl7-h9KwBjvZk9Z5kjnRJ84ZrBOI6gASAUMMDsMSLgXxjNeeKnFAxHrxHpFU_jQ/exec";
-// Public routing token for this invitation group. It is sent to Apps Script but never displayed.
-const RSVP_GROUP_TOKEN = "FMM01";
+// Public routing token read from the private link (?group=...). It is never displayed.
+const RSVP_GROUP_TOKEN = new URLSearchParams(window.location.search).get("group")?.trim().toUpperCase() || "";
 
 document.querySelectorAll('a[href^="http"]').forEach((link) => {
   link.addEventListener("click", () => {
@@ -31,7 +31,9 @@ const confirmedNames = document.querySelector("#rsvp-confirmed-names");
 const rsvpState = { selectionKey: "", invitationName: "", people: [] };
 
 function apiIsConfigured() {
-  return RSVP_API_URL.startsWith("https://script.google.com/") && RSVP_API_URL.endsWith("/exec");
+  return RSVP_API_URL.startsWith("https://script.google.com/")
+    && RSVP_API_URL.endsWith("/exec")
+    && /^[A-Z0-9]{5}$/.test(RSVP_GROUP_TOKEN);
 }
 
 function setStep(activeStep) {
@@ -103,7 +105,7 @@ searchForm.addEventListener("submit", async (event) => {
   searchResults.replaceChildren();
 
   if (!apiIsConfigured()) {
-    searchStatus.textContent = "La confirmación estará disponible cuando se conecte el servicio RSVP";
+    searchStatus.textContent = "Este enlace de confirmación no es válido. Revisa que hayas abierto el enlace completo";
     return;
   }
   if (query.length < 3) {

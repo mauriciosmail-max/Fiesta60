@@ -8,7 +8,7 @@ En la pestaña `Sheet1`, la fila 1 debe contener exactamente:
 | --- | --- | --- | --- | --- | --- | --- |
 | `invite_id` | `group_name` | `group_token` | `invitation_name` | `person_name` | `attending` | `responded_at` |
 
-Para este sitio, cada fila debe usar exactamente `FMM01` en la columna `group_token`. El token distingue este grupo de otros que puedan compartir el mismo Sheet; no es una contraseña y nunca se muestra en la interfaz.
+Cada fila debe usar uno de estos cinco valores en la columna `group_token`: `FMM01`, `FMA02`, `AMK01`, `BCN01` o `DFW01`. El token distingue los grupos que comparten el mismo Sheet; no es una contraseña y nunca se muestra en la interfaz.
 
 No publiques el Sheet ni cambies su configuración de acceso. El Web App será el único intermediario.
 
@@ -49,13 +49,13 @@ Esta función valida los encabezados y crea un secreto privado en las propiedade
    ```
 
 3. Sustituye únicamente el texto entre comillas por la URL `/exec` copiada en el paso anterior.
-4. Confirma que la constante del grupo sea:
+4. Confirma que el token del grupo se lea desde el enlace:
 
    ```js
-   const RSVP_GROUP_TOKEN = "FMM01";
+   const RSVP_GROUP_TOKEN = new URLSearchParams(window.location.search).get("group")?.trim().toUpperCase() || "";
    ```
 
-5. Guarda, prueba y después publica el cambio en GitHub Pages.
+5. Guarda, prueba usando uno de los enlaces con `?group=...` y después publica el cambio en GitHub Pages.
 
 ## 6. Probar antes de publicar
 
